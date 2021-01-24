@@ -8,6 +8,7 @@
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/usart.h>
+#include "f303_printf.h"
 
 extern void vApplicationStackOverflowHook(
     xTaskHandle *pxTask,
@@ -21,26 +22,15 @@ void vApplicationStackOverflowHook(
     ; // Loop forever here..
 }
 
-static void uart_putc(char ch) {
-  usart_send_blocking(USART2, ch);
-}
-
 static void
 task1(void *args __attribute((unused)))
 {
-  int c = '0' - 1;
   for (;;)
   {
     gpio_toggle(GPIOA, GPIO5);
     vTaskDelay(pdMS_TO_TICKS(200));
-    if( ++c >= 'Z') {
-      uart_putc(c);
-      uart_putc('\r');
-      uart_putc('\n');
-      c = '0' - 1;
-    } else {
-      uart_putc(c);
-    }
+    //SEND TEST DATA
+    uart_printf("\nuart.c demo using mini_printf():\n");
   }
 }
 
@@ -61,9 +51,9 @@ static void uart_setup(void)
 int main(void)
 {
   rcc_periph_clock_enable(RCC_GPIOA);
+  init_printf();
   gpio_mode_setup(GPIOA, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO5);
   gpio_set_output_options(GPIOA, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ, GPIO5);
-  uart_setup();
 
   xTaskCreate(task1, "USART", 100, NULL, configMAX_PRIORITIES - 1, NULL);
   vTaskStartScheduler();
